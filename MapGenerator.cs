@@ -18,25 +18,21 @@ namespace WalkTheWorld
         private static int mapSize => WalkTheWorldMod.Settings.mapSize;
         private static int eventChance => WalkTheWorldMod.Settings.eventChance;
         private static int mapCountForEvent => WalkTheWorldMod.Settings.mapCountForEvent;
-        private static IntVec3 desidedSize => new IntVec3(mapSize, 1, mapSize);
+        private static WorldObjectDef ExplorationTileDef => DefDatabase<WorldObjectDef>.GetNamed("ExplorationTile");
+        private static IntVec3 decidedSize => new IntVec3(mapSize, 1, mapSize);
 
         public MapGenerator(PlanetTile tile)
         {
             this.targetTile = tile.tileId;
-            WorldObjectDef def = DefDatabase<WorldObjectDef>.GetNamed("ExplorationTile");
-
-            WorldObject worldObject = Find.WorldObjects.AllWorldObjects
-                .FirstOrDefault(w => w.Tile == targetTile && w.def == def);
             hasLandmark = tile.Tile.Landmark != null;
             var existingObjects = Find.WorldObjects.AllWorldObjects.Where(w => w.Tile == targetTile).ToList();
             bool isFriendlySettlement = existingObjects.OfType<Settlement>()
-                                                     .Any(s => s.Faction != Faction.OfPlayer && s.Faction.PlayerGoodwill >= 0);
+                                                     .Any(s => s.Faction != null && s.Faction != Faction.OfPlayer && s.Faction.PlayerGoodwill >= 0);
 
             if (isFriendlySettlement)
             {
-                Settlement friendlySettlement = existingObjects.OfType<Settlement>().First(s => s.Faction.PlayerGoodwill >= 0);
-                settlement = friendlySettlement;
-                decidedDef = friendlySettlement.def;
+                settlement = existingObjects.OfType<Settlement>().First(s => s.Faction != null && s.Faction != Faction.OfPlayer && s.Faction.PlayerGoodwill >= 0);
+                decidedDef = settlement.def;
             }
             else if (existingObjects.Any(o => o is MapParent || o is Site || o is Settlement))
             {
@@ -45,25 +41,25 @@ namespace WalkTheWorld
             }
             else
             {
-                decidedDef = DefDatabase<WorldObjectDef>.GetNamed("ExplorationTile");
+                decidedDef = ExplorationTileDef;
             }
         }
 
         public void StartGeneration()
         {
-            Map map = Current.Game.FindMap(targetTile);
-            bool transferweather = map == null;
-            if (settlement != null || decidedDef != DefDatabase<WorldObjectDef>.GetNamed("ExplorationTile") || hasLandmark)
+            Map existingMap = Current.Game.FindMap(targetTile);
+            bool generatedNewMap = existingMap == null;
+            if (settlement != null || decidedDef != ExplorationTileDef || hasLandmark)
                 generatedMap = GetOrGenerateMapUtility.GetOrGenerateMap(targetTile, decidedDef);
             else
-                generatedMap = GetOrGenerateMapUtility.GetOrGenerateMap(targetTile, desidedSize, decidedDef);
-            if (transferweather)
+                generatedMap = GetOrGenerateMapUtility.GetOrGenerateMap(targetTile, decidedSize, decidedDef);
+            if (generatedNewMap && Find.CurrentMap != null && generatedMap != Find.CurrentMap)
                 TransferWeatherEvent(Find.CurrentMap, generatedMap);
             if (settlement != null)
             {
                 SpawnSettlementTrader(generatedMap, settlement);
             }
-            else
+            else if (generatedNewMap)
                 if (!TryCreateEventForMap(generatedMap))
                     mapsSinceLastEvent += 1;
         }
@@ -81,7 +77,9 @@ namespace WalkTheWorld
         {
             try
             {
-                if (!(UnityEngine.Random.Range(1, 100) <= eventChance || (mapCountForEvent > 0 & (mapsSinceLastEvent >= mapCountForEvent))))
+                if (map == null)
+                    return false;
+                if (!(UnityEngine.Random.Range(1, 101) <= eventChance || (mapCountForEvent > 0 && mapsSinceLastEvent >= mapCountForEvent)))
                     return false;
                 IncidentParms parms = new IncidentParms
                 {
@@ -95,16 +93,29 @@ namespace WalkTheWorld
                     b = c.Where(x => x.TargetAllowed(map)).ToList();
                 else
                     b = c.ToList();
-                
-                FiringIncident fi = new FiringIncident(
-                    def: b.RandomElement(), 
-                    Find.Storyteller.storytellerComps.FirstOrDefault(),
-                    parms: parms
-                );
-                if (!Find.Storyteller.TryFire(fi))
-                    return TryCreateEventForMap(map);
-                mapsSinceLastEvent = 0;
-                return true;
+
+                if (!b.Any())
+                    return false;
+
+                int attempts = Math.Min(b.Count, 12);
+                for (int i = 0; i < attempts; i++)
+                {
+                    IncidentDef incident = b.RandomElement();
+                    FiringIncident fi = new FiringIncident(
+                        def: incident,
+                        Find.Storyteller.storytellerComps.FirstOrDefault(),
+                        parms: parms
+                    );
+                    if (Find.Storyteller.TryFire(fi))
+                    {
+                        mapsSinceLastEvent = 0;
+                        return true;
+                    }
+                    b.Remove(incident);
+                    if (!b.Any())
+                        break;
+                }
+                return false;
             }
             catch (Exception ex)
             {
@@ -115,11 +126,16 @@ namespace WalkTheWorld
         }
         public static void SpawnSettlementTrader(Map map, Settlement settlement)
         {
+            if (map == null || settlement?.trader?.TraderKind == null)
+                return;
+
             Pawn traderPawn = map.mapPawns.AllPawnsSpawned.FirstOrDefault(p => p.Faction == settlement.Faction &&
                            p.RaceProps.Humanlike &&
-                           p.trader == null &&
                            !p.IsPrisoner &&
                            !p.Downed);
+            if (traderPawn == null)
+                return;
+
             if (traderPawn.trader == null)
             {
                 traderPawn.trader = new Pawn_TraderTracker(traderPawn);

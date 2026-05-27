@@ -1,0 +1,14 @@
+# Build outputs
+bin/
+obj/
+1.6/Assemblies/
+
+# Local editor/IDE state
+.vscode/
+.vs/
+*.user
+*.suo
+*.rsuser
+
+# Steam Workshop/local publishing state
+About/PublishedFileId.txt

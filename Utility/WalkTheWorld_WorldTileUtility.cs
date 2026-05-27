@@ -46,14 +46,19 @@ namespace WalkTheWorld
             int res = GetTileInSpecificDirection(fromTile, dir);
             if (res != -1)
                 return res;
-            var newDir = (Direction8Way)(Mathf.Clamp((int)dir + 1, 1, 7));
-            res = GetTileInSpecificDirection(fromTile, newDir);
-            if (res != -1)
-                return res;
-            newDir = (Direction8Way)(Mathf.Clamp((int)dir - 1, 1, 7));
-            res = GetTileInSpecificDirection(fromTile, newDir);
-            if (res != -1)
-                return res;
+
+            for (int offset = 1; offset <= 4; offset++)
+            {
+                Direction8Way clockwise = (Direction8Way)(((int)dir + offset) % 8);
+                res = GetTileInSpecificDirection(fromTile, clockwise);
+                if (res != -1)
+                    return res;
+
+                Direction8Way counterClockwise = (Direction8Way)(((int)dir - offset + 8) % 8);
+                res = GetTileInSpecificDirection(fromTile, counterClockwise);
+                if (res != -1)
+                    return res;
+            }
             return -1;
         }
 

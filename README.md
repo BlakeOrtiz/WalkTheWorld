@@ -23,7 +23,7 @@ Odyssey's landmarks **are supported** – new landmarks can be explored seamless
 ## Technical limitations
 
 I tried to went **big** with this mod. However, some limitations are there:
-* Mapgen is long. Therefore, default size of temporary exploration sites are 60x60 cells. While not large enough for proper settling, they are still suitable for both exploring and short generation times;
+* Mapgen is long. Therefore, default size of temporary exploration sites are 60x60 cells. The size is configurable from 30x30 up to 300x300 cells, so stronger machines can use larger walked areas while keeping the default suitable for short generation times;
 * Exploration sites are not saved upon leaving. Reentering the same tile will regenerate it from scratch, even if it was bombarded, burned or salvaged to the ground. However, having any buildings or pawns on the site will keep it loaded, so strolling around with one camp in the middle tile is still possible.
 
 ## Mod compatibility
@@ -33,4 +33,22 @@ Modded settlements schemes, new biomes or any other **mapgen** stuff should be s
 Trader's quests are derived from the in-game lists of quests where QuestGiverTag is Trader (Spacer factions can also give OrbitalScanner quests). Therefore, adding more quests with that tag should make Walk The World be available to give it quest, too.
 
 If you're a modder and want to create something more complicated, feel free to contact me.
+
+## Local testing build
+
+This repository is set up as a RimWorld 1.6 local mod package. Build output goes to `1.6/Assemblies/WalkTheWorld.dll`, matching RimWorld's versioned mod folder convention.
+
+To build and deploy a local test copy into the Steam RimWorld install, run from this folder:
+
+```powershell
+& ".\Scripts\Deploy-RimWorldMod.ps1"
+```
+
+By default the script deploys to:
+
+```text
+C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods\WalkTheWorld
+```
+
+After deploying, enable the local **Walk the World** mod in RimWorld's mod list. Harmony must also be installed and loaded before this mod.
 

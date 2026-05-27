@@ -45,7 +45,7 @@ namespace WalkTheWorld
             if (page == 0)
             {
                 listing.Label($"{"WTW_Settings_MapSizeLabel".Translate()}: {Settings.mapSize:F1}");
-                Settings.mapSize = (int)listing.Slider(Settings.mapSize, 30, 200);
+                Settings.mapSize = (int)listing.Slider(Settings.mapSize, WalkTheWorldModSettings.MinExplorationMapSize, WalkTheWorldModSettings.MaxExplorationMapSize);
                 if (Settings.eventChance > 0)
                     listing.Label($"{"WTW_Settings_EventChanceLabel".Translate()}: {Settings.eventChance}%");
                 else
@@ -108,7 +108,7 @@ namespace WalkTheWorld
                 listing.Gap();
                 if (listing.ButtonText("WTW_Settings_DefaultsButton".Translate(), widthPct: 0.15f))
                 {
-                    Settings.mapSize = 60;
+                    Settings.mapSize = WalkTheWorldModSettings.DefaultExplorationMapSize;
                     Settings.eventChance = 15;
                     Settings.mapCountForEvent = 5;
                     Settings.leavingType = LeavingType.Selected;
