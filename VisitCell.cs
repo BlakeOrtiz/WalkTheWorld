@@ -1,5 +1,6 @@
 ﻿using RimWorld.Planet;
 using RimWorld;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Verse;
@@ -25,6 +26,27 @@ namespace WalkTheWorld
         {
             return base.Map.mapPawns.AnyPawnBlockingMapRemoval;
         }
+
+        public override string GetInspectString()
+        {
+            string inspectString = base.GetInspectString();
+            if (WalkTheWorld.Instance == null || !WalkTheWorld.Instance.TryGetTileRecord(this.Tile.tileId, out ExploredTileRecord record))
+                return inspectString;
+
+            if (!string.IsNullOrEmpty(inspectString))
+                inspectString += "\n";
+            inspectString += "WTW_ExploredTile_Visits".Translate(record.visitCount.ToString());
+
+            if (record.lastVisitedTick >= 0)
+            {
+                int ticksAgo = Math.Max(0, Find.TickManager.TicksGame - record.lastVisitedTick);
+                float daysAgo = ticksAgo / 60000f;
+                inspectString += "\n" + "WTW_ExploredTile_LastVisited".Translate(daysAgo.ToString("0.0"));
+            }
+
+            return inspectString;
+        }
+
         public override void Notify_MyMapRemoved(Map map)
         {
             List<WorldObjectComp> allComps = base.AllComps;

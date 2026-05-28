@@ -16,6 +16,9 @@ namespace WalkTheWorld
         public IntVec3 lastEnterPos = IntVec3.Zero;
         private int suppressPromptUntilTick = 0;
         private bool confirmationWindowOpen = false;
+        private Dictionary<int, ExploredTileRecord> exploredTiles = new Dictionary<int, ExploredTileRecord>();
+        private List<int> exploredTileKeys;
+        private List<ExploredTileRecord> exploredTileValues;
 
         public WalkTheWorld(Game game)
         {
@@ -26,7 +29,42 @@ namespace WalkTheWorld
         {
             base.FinalizeInit();
             Instance = this;
+            if (exploredTiles == null)
+                exploredTiles = new Dictionary<int, ExploredTileRecord>();
 
+        }
+
+        public override void ExposeData()
+        {
+            base.ExposeData();
+            Scribe_Collections.Look(ref exploredTiles, "exploredTiles", LookMode.Value, LookMode.Deep, ref exploredTileKeys, ref exploredTileValues);
+            if (Scribe.mode == LoadSaveMode.PostLoadInit && exploredTiles == null)
+                exploredTiles = new Dictionary<int, ExploredTileRecord>();
+        }
+
+        public ExploredTileRecord GetOrCreateTileRecord(int tileId)
+        {
+            if (exploredTiles == null)
+                exploredTiles = new Dictionary<int, ExploredTileRecord>();
+            if (!exploredTiles.TryGetValue(tileId, out ExploredTileRecord record) || record == null)
+            {
+                record = new ExploredTileRecord(tileId);
+                exploredTiles[tileId] = record;
+            }
+            return record;
+        }
+
+        public bool TryGetTileRecord(int tileId, out ExploredTileRecord record)
+        {
+            record = null;
+            return exploredTiles != null && exploredTiles.TryGetValue(tileId, out record) && record != null;
+        }
+
+        public ExploredTileRecord RecordTileEntered(int tileId)
+        {
+            ExploredTileRecord record = GetOrCreateTileRecord(tileId);
+            record.NotifyEntered(Find.TickManager.TicksGame);
+            return record;
         }
 
         public bool TryStartTravel(Pawn pawn)
@@ -129,6 +167,7 @@ namespace WalkTheWorld
                 Find.Selector.Select(pawn);
             }
             ResetCamera(GetNewCameraPosition(firstPawn, targetMap));
+            RecordTileEntered(targetMap.Tile);
             lastEnterPos = firstPawn.Position;
             lastEnterTick = Find.TickManager.TicksGame;
         }

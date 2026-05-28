@@ -34,4 +34,6 @@
   <WTW_TakeQuest>Ask for a quest</WTW_TakeQuest>
   <WTW_Settings_ExitMapGrid_Description>The map exit zone is a green outline used in combat situations. Leaving the map through this zone forms a caravan of fleeing pawns.\nExit zones are disabled in exploration sites and can also be disabled on other maps, making Walk the World travel the only way to leave the map in battle.</WTW_Settings_ExitMapGrid_Description>
   <WTW_Settings_disableExitMapGridLabel>Should the map exit zone be disabled for all maps?</WTW_Settings_disableExitMapGridLabel>
+  <WTW_ExploredTile_Visits>Visits: {0}</WTW_ExploredTile_Visits>
+  <WTW_ExploredTile_LastVisited>Last visited: {0} days ago</WTW_ExploredTile_LastVisited>
 </LanguageData>

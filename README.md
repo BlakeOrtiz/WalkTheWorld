@@ -24,7 +24,7 @@ Odyssey's landmarks **are supported** – new landmarks can be explored seamless
 
 I tried to went **big** with this mod. However, some limitations are there:
 * Mapgen is long. Therefore, default size of temporary exploration sites are 60x60 cells. The size is configurable from 30x30 up to 300x300 cells, so stronger machines can use larger walked areas while keeping the default suitable for short generation times;
-* Exploration sites are not saved upon leaving. Reentering the same tile will regenerate it from scratch, even if it was bombarded, burned or salvaged to the ground. However, having any buildings or pawns on the site will keep it loaded, so strolling around with one camp in the middle tile is still possible.
+* Exploration sites may regenerate after leaving when they are small, temporary, and untouched. In testing, maps can persist across exit and re-entry when the exploration map size is set to a full tile size recognized by the game and the player has changed the map, such as by building structures. Smaller transient exploration maps should still be treated as temporary unless anchored by player presence or changes.
 
 ## Mod compatibility
 

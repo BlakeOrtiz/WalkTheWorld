@@ -53,6 +53,7 @@
     <Compile Include="Settings\SettingsMenu.cs" />
     <Compile Include="Utility\Enums.cs" />
     <Compile Include="Utility\WalkTheWorld_WorldTileUtility.cs" />
+    <Compile Include="ExploredTileRecord.cs" />
     <Compile Include="WalkTheWorldComponent.cs" />
     <Compile Include="MapGenerator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -12,7 +12,7 @@ This document is intended to survive chat loss. Another coding agent should be a
 
 Walk the World currently enables a strong fantasy: pawns can physically walk from one RimWorld map to the next, making the planet feel traversable instead of abstract. The next stage should focus on making that travel matter.
 
-The best path is not to permanently save every generated map. RimWorld maps are heavy, and keeping hundreds of explored maps alive would quickly create performance and save-size problems. Instead, the mod should implement stateful regeneration: record durable facts about each explored world tile, then apply those facts whenever the tile is generated again.
+The best path is a hybrid persistence model. RimWorld can preserve some full maps when the generated map is a full tile size recognized by the game and the player has materially changed it, such as by building structures. Smaller untouched exploration maps should still use stateful regeneration: record durable facts about each explored world tile, then apply those facts whenever the tile is generated again.
 
 The mod should become a world-tile memory layer. It should remember visited tiles, looted ruins, consumed landmarks, cleared threats, camps, cached supplies, local reputation effects, depletion, danger, and repeated routes. It should also expose hooks and defs so other mods can add progression rewards and consequences.
 
@@ -299,11 +299,11 @@ This should be verified in game. If RimWorld type lookup is unexpectedly case-in
 README-listed limitations:
 
 1. Map generation can be slow. Exploration maps default to `60x60`, configurable up to `300x300`.
-2. Exploration sites are not fully saved after leaving. Re-entering a cleared temporary tile can regenerate it from scratch unless buildings/pawns keep the map loaded.
+2. Exploration sites are not always fully saved after leaving. Re-entering a small untouched temporary tile can regenerate it from scratch. Verified testing showed that a full-size exploration map can persist across exit and re-entry when the player has changed the map, such as by building structures.
 
 Additional technical limits and risks:
 
-1. Full map persistence for many tiles is not realistic as the default. It risks huge saves and degraded performance.
+1. Full map persistence for every walked tile is not realistic as the default. It risks huge saves and degraded performance. Full-map retention should be treated as an intentional higher persistence tier for full-size, player-touched, camped, or claimed maps.
 2. Travel is edge-based and depends on map/world direction mapping. Edge cases around poles, oceans, lakes, and weird world topology need testing.
 3. Settlement/quest site entry relies on vanilla/map-parent behavior and compatibility patches.
 4. Weather event transfer currently registers active conditions from one map to another. Future review should confirm this is safe, especially if condition instances should not be shared between maps.
@@ -696,15 +696,15 @@ Persistence tiers:
 
 ### Light
 
-Only records summary facts. Maps unload normally.
+Only records summary facts. Small or untouched maps unload normally.
 
 ### Standard
 
-Records facts plus abstract caches/camps. Maps unload normally unless vanilla keeps them.
+Records facts plus abstract caches/camps. Maps unload normally unless vanilla keeps them because the tile is full-size and player-touched.
 
 ### Immersive
 
-Allows intentionally claimed camps to remain loaded or semi-persistent, with warnings about performance/save size.
+Allows intentionally claimed camps or full-size player-touched maps to remain loaded or semi-persistent, with warnings about performance/save size.
 
 Settings should make these tiers explicit.
 
@@ -1144,7 +1144,7 @@ Project rules:
 4. Keep package ID `addvans.WalkTheWorld` unless explicitly asked otherwise.
 5. Keep RimWorld/Unity/Harmony references `Private=False`.
 6. Keep generated `1.6/Assemblies/*.dll` and `*.pdb` out of git unless explicitly asked.
-7. Prefer compact save data over full map persistence.
+7. Prefer compact save data by default; reserve full map persistence for full-size, player-touched, camped, or claimed tiles.
 8. Preserve the tick fallback travel check for compatibility.
 9. Make behavior configurable before changing core player expectations.
 10. Test in a new save before testing old saves.
