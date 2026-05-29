@@ -23,8 +23,8 @@ Odyssey's landmarks **are supported** – new landmarks can be explored seamless
 ## Technical limitations
 
 I tried to went **big** with this mod. However, some limitations are there:
-* Mapgen is long. Therefore, default size of temporary exploration sites are 60x60 cells. The size is configurable from 30x30 up to 300x300 cells, so stronger machines can use larger walked areas while keeping the default suitable for short generation times;
-* Exploration sites may regenerate after leaving when they are small, temporary, and untouched. In testing, maps can persist across exit and re-entry when the exploration map size is set to a full tile size recognized by the game and the player has changed the map, such as by building structures. Smaller transient exploration maps should still be treated as temporary unless anchored by player presence or changes.
+* Mapgen is long. Therefore, Light-mode exploration sites are limited to 30x30 or 60x60 cells. Standard mode locks exploration maps to 200x200, the smallest persistent-size map identified in vanilla/DLC data. Immersive mode allows persistent-size maps from 200x200 up to 325x325 in 25-cell increments;
+* Light-mode exploration maps unload when no pawns remain, even if the player changed or built on them. Standard and Immersive maps are persistent-size maps; visited exploration maps are kept in the save, but hibernate while empty so their pawns/things do not actively tick. Exploration tiles do not use caravan-ambush incident tags, but retaining many saved maps still has save and memory cost.
 
 ## Mod compatibility
 

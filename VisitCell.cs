@@ -24,7 +24,19 @@ namespace WalkTheWorld
 
         public bool DoPawnBlockRemove()
         {
+            if (!HasMap)
+                return false;
             return base.Map.mapPawns.AnyPawnBlockingMapRemoval;
+        }
+
+        public static bool ShouldKeepExplorationMapPersistent(Map map)
+        {
+            if (map == null || WalkTheWorldMod.Settings == null)
+                return false;
+            if (WalkTheWorldMod.Settings.persistenceMode == PersistenceMode.Light)
+                return false;
+
+            return map.Size.x >= WalkTheWorldModSettings.MinPersistentMapSize && map.Size.z >= WalkTheWorldModSettings.MinPersistentMapSize;
         }
 
         public override string GetInspectString()
@@ -44,11 +56,20 @@ namespace WalkTheWorld
                 inspectString += "\n" + "WTW_ExploredTile_LastVisited".Translate(daysAgo.ToString("0.0"));
             }
 
+            if (record.playerChangedMap)
+                inspectString += "\n" + "WTW_ExploredTile_PlayerChanged".Translate();
+
+            if (record.unloadedAfterPlayerChanges)
+                inspectString += "\n" + "WTW_ExploredTile_MapUnloaded".Translate();
+
             return inspectString;
         }
 
         public override void Notify_MyMapRemoved(Map map)
         {
+            bool changedByPlayer = map != null && IsAffectedByPlayer(map);
+            WalkTheWorld.Instance?.RecordTileMapRemoved(this.Tile.tileId, map, changedByPlayer, changedByPlayer);
+
             List<WorldObjectComp> allComps = base.AllComps;
             for (int i = 0; i < allComps.Count; i++)
             {
@@ -75,8 +96,21 @@ namespace WalkTheWorld
                 alsoRemoveWorldObject = true;
                 return true;
             }
+            if (!HasMap)
+            {
+                alsoRemoveWorldObject = false;
+                return false;
+            }
             if (!base.Map.mapPawns.AnyPawnBlockingMapRemoval)
             {
+                if (ShouldKeepExplorationMapPersistent(this.Map))
+                {
+                    if (!affected)
+                        affected = IsAffectedByPlayer(this.Map);
+                    alsoRemoveWorldObject = false;
+                    return false;
+                }
+
                 if (!affected)
                     affected = IsAffectedByPlayer(this.Map);
                 if (!affected)
@@ -84,6 +118,8 @@ namespace WalkTheWorld
                     alsoRemoveWorldObject = true;
                     return true;
                 }
+                alsoRemoveWorldObject = false;
+                return true;
             }
             alsoRemoveWorldObject = false;
             return false;

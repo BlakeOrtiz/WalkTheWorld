@@ -17,4 +17,10 @@
         Centered,
         Ignore
     }
+    public enum PersistenceMode
+    {
+        Light,
+        Standard,
+        Immersive
+    }
 }

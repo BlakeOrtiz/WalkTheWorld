@@ -14,8 +14,12 @@ namespace WalkTheWorld
         public int PromptRetryCooldownTicks = 600;
         public int lastEnterTick = 0;
         public IntVec3 lastEnterPos = IntVec3.Zero;
+        private const int HibernationCheckIntervalTicks = 250;
         private int suppressPromptUntilTick = 0;
+        private int nextHibernationCheckTick = 0;
         private bool confirmationWindowOpen = false;
+        private bool welcomeDialogShown = false;
+        private HashSet<int> hibernatedExplorationTiles = new HashSet<int>();
         private Dictionary<int, ExploredTileRecord> exploredTiles = new Dictionary<int, ExploredTileRecord>();
         private List<int> exploredTileKeys;
         private List<ExploredTileRecord> exploredTileValues;
@@ -31,15 +35,38 @@ namespace WalkTheWorld
             Instance = this;
             if (exploredTiles == null)
                 exploredTiles = new Dictionary<int, ExploredTileRecord>();
+            if (hibernatedExplorationTiles == null)
+                hibernatedExplorationTiles = new HashSet<int>();
 
         }
 
         public override void ExposeData()
         {
             base.ExposeData();
+            Scribe_Values.Look(ref welcomeDialogShown, "welcomeDialogShown", false);
             Scribe_Collections.Look(ref exploredTiles, "exploredTiles", LookMode.Value, LookMode.Deep, ref exploredTileKeys, ref exploredTileValues);
             if (Scribe.mode == LoadSaveMode.PostLoadInit && exploredTiles == null)
                 exploredTiles = new Dictionary<int, ExploredTileRecord>();
+            if (Scribe.mode == LoadSaveMode.PostLoadInit && hibernatedExplorationTiles == null)
+                hibernatedExplorationTiles = new HashSet<int>();
+        }
+
+        private void TryShowWelcomeDialog()
+        {
+            if (welcomeDialogShown)
+                return;
+            if (Current.Game == null || Find.World == null || Find.WindowStack == null || Find.TickManager == null)
+                return;
+            if (Find.TickManager.TicksGame < 1)
+                return;
+
+            welcomeDialogShown = true;
+            Find.WindowStack.Add(new Dialog_MessageBox(
+                "WTW_WelcomeDialog_Text".Translate(),
+                "WTW_WelcomeDialog_OpenSettings".Translate(),
+                WalkTheWorldMod.OpenSettingsWindow,
+                "WTW_WelcomeDialog_Continue".Translate(),
+                null));
         }
 
         public ExploredTileRecord GetOrCreateTileRecord(int tileId)
@@ -65,6 +92,65 @@ namespace WalkTheWorld
             ExploredTileRecord record = GetOrCreateTileRecord(tileId);
             record.NotifyEntered(Find.TickManager.TicksGame);
             return record;
+        }
+
+        public ExploredTileRecord RecordTileMapRemoved(int tileId, Map map, bool changedByPlayer, bool unloadedChangedMap)
+        {
+            ExploredTileRecord record = GetOrCreateTileRecord(tileId);
+            record.NotifyMapRemoved(Find.TickManager.TicksGame, map, changedByPlayer, unloadedChangedMap);
+            hibernatedExplorationTiles?.Remove(tileId);
+            return record;
+        }
+
+        public bool IsMapHibernated(Map map)
+        {
+            return map != null && hibernatedExplorationTiles != null && hibernatedExplorationTiles.Contains(map.Tile);
+        }
+
+        public void WakeMap(Map map)
+        {
+            if (map == null || hibernatedExplorationTiles == null || !hibernatedExplorationTiles.Contains(map.Tile))
+                return;
+
+            foreach (Thing thing in map.listerThings.AllThings.ToList())
+            {
+                Find.TickManager.RegisterAllTickabilityFor(thing);
+            }
+            hibernatedExplorationTiles.Remove(map.Tile);
+        }
+
+        private void HibernateMap(Map map)
+        {
+            if (map == null || hibernatedExplorationTiles == null || hibernatedExplorationTiles.Contains(map.Tile))
+                return;
+
+            Find.TickManager.RemoveAllFromMap(map);
+            hibernatedExplorationTiles.Add(map.Tile);
+        }
+
+        private bool ShouldHibernateMap(Map map)
+        {
+            if (map == null || !(map.Parent is VisitCell))
+                return false;
+            if (!VisitCell.ShouldKeepExplorationMapPersistent(map))
+                return false;
+
+            return !map.mapPawns.SpawnedPawnsInFaction(Faction.OfPlayer).Any();
+        }
+
+        private void UpdateExplorationMapHibernation()
+        {
+            if (Current.Game == null || Find.TickManager == null || Find.TickManager.TicksGame < nextHibernationCheckTick)
+                return;
+
+            nextHibernationCheckTick = Find.TickManager.TicksGame + HibernationCheckIntervalTicks;
+            foreach (Map map in Current.Game.Maps.ToList())
+            {
+                if (ShouldHibernateMap(map))
+                    HibernateMap(map);
+                else if (IsMapHibernated(map))
+                    WakeMap(map);
+            }
         }
 
         public bool TryStartTravel(Pawn pawn)
@@ -156,6 +242,7 @@ namespace WalkTheWorld
             if (!caravanPawns.Any())
                 return;
 
+            WakeMap(targetMap);
             Pawn firstPawn = caravanPawns[0];
             CaravanEnterMapUtility.Enter(caravan, targetMap, CaravanEnterMode.Edge,
                 extraCellValidator: predicate,
@@ -166,6 +253,7 @@ namespace WalkTheWorld
             {
                 Find.Selector.Select(pawn);
             }
+            WakeMap(targetMap);
             ResetCamera(GetNewCameraPosition(firstPawn, targetMap));
             RecordTileEntered(targetMap.Tile);
             lastEnterPos = firstPawn.Position;
@@ -281,6 +369,8 @@ namespace WalkTheWorld
         public override void GameComponentTick()
         {
             base.GameComponentTick();
+            TryShowWelcomeDialog();
+            UpdateExplorationMapHibernation();
             if (Find.TickManager.TicksGame - lastEnterTick < TicksCooldown || !WorldRendererUtility.DrawingMap || Find.Selector.SelectedPawns.Count <= 0)
                 return;
             Pawn pawn = GetLeavingPawn();

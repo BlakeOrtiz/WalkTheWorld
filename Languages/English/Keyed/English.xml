@@ -8,7 +8,18 @@
   <WTW_Settings_CameraFocusesPawns>Entered pawns</WTW_Settings_CameraFocusesPawns>
   <WTW_Settings_CameraFocusesMapCenter>Map center</WTW_Settings_CameraFocusesMapCenter>
   <WTW_Settings_CameraFocusesNothing>Prevent camera movement</WTW_Settings_CameraFocusesNothing>
+  <WTW_Settings_PersistenceModeLabel>Persistence mode</WTW_Settings_PersistenceModeLabel>
+  <WTW_Settings_PersistenceMode_Light>Light</WTW_Settings_PersistenceMode_Light>
+  <WTW_Settings_PersistenceMode_Standard>Standard</WTW_Settings_PersistenceMode_Standard>
+  <WTW_Settings_PersistenceMode_Immersive>Immersive</WTW_Settings_PersistenceMode_Immersive>
+  <WTW_Settings_PersistenceMode_LightDesc>Small transient exploration maps at either {0} or {1} cells. Best for performance; tile memory is stored separately.</WTW_Settings_PersistenceMode_LightDesc>
+  <WTW_Settings_PersistenceMode_StandardDesc>Persistent-size exploration maps locked to {0} cells. Visited maps are saved and hibernate while empty.</WTW_Settings_PersistenceMode_StandardDesc>
+  <WTW_Settings_PersistenceMode_ImmersiveDesc>Persistent-size exploration maps from {0} to {1} cells, snapped in {2}-cell increments. Visited maps are saved and hibernate while empty.</WTW_Settings_PersistenceMode_ImmersiveDesc>
   <WTW_Settings_MapSizeLabel>Map size</WTW_Settings_MapSizeLabel>
+  <WTW_Settings_MapSizeLockedLabel>Locked by persistence mode at {0} cells.</WTW_Settings_MapSizeLockedLabel>
+  <WTW_Settings_MapSizeLightCompactLabel>Compact: {0}</WTW_Settings_MapSizeLightCompactLabel>
+  <WTW_Settings_MapSizeLightDefaultLabel>Default: {0}</WTW_Settings_MapSizeLightDefaultLabel>
+  <WTW_Settings_MapSizeStepLabel>Map size snaps in {0}-cell increments.</WTW_Settings_MapSizeStepLabel>
   <WTW_Settings_EventChanceLabel>Chance of event on entering map</WTW_Settings_EventChanceLabel>
   <WTW_Settings_EventChanceDisabledLabel>events disabled</WTW_Settings_EventChanceDisabledLabel>
   <WTW_Settings_EventChancePerMapLabel>Guaranteed event for each: {0} map</WTW_Settings_EventChancePerMapLabel>
@@ -25,6 +36,9 @@
   <WTW_Settings_MapMutatorsAddButton>Add mutator</WTW_Settings_MapMutatorsAddButton>
   <WTW_Settings_MapMutatorsRemoveDescription>Click the button below to see which mutators are marked for deletion on leaving. Click a mutator to remove it from the list.</WTW_Settings_MapMutatorsRemoveDescription>
   <WTW_Settings_MapMutatorsRemoveButton>Mutators</WTW_Settings_MapMutatorsRemoveButton>
+  <WTW_WelcomeDialog_Text>Welcome to Walk the World. This mod lets pawns travel from map to map by walking off the edge, turning the world into a connected journey.\n\nChoose the play style that fits your save:\n\nLight: small 30x30 or 60x60 exploration maps. Best for performance; maps are temporary and tile memory is stored separately.\n\nStandard: 200x200 exploration maps. Visited maps are saved and hibernate while empty so mined resources and builds can persist without active simulation.\n\nImmersive: 200x200 to 325x325 exploration maps for larger open-world play. Visited maps are saved and hibernate while empty, with larger save and memory costs.\n\nYou can change these options now in the Walk the World settings.</WTW_WelcomeDialog_Text>
+  <WTW_WelcomeDialog_OpenSettings>Open settings</WTW_WelcomeDialog_OpenSettings>
+  <WTW_WelcomeDialog_Continue>Continue</WTW_WelcomeDialog_Continue>
   <WTW_AbandonExplorationSite>Abandon this site? You can return later, but all items left here will be lost.</WTW_AbandonExplorationSite>
   <WTW_AbandonImpossibleBecauseOfPawns>Cannot abandon a site with pawns on it.</WTW_AbandonImpossibleBecauseOfPawns>
   <WTW_WalkTile_Button>Walk this Tile</WTW_WalkTile_Button>
@@ -36,4 +50,6 @@
   <WTW_Settings_disableExitMapGridLabel>Should the map exit zone be disabled for all maps?</WTW_Settings_disableExitMapGridLabel>
   <WTW_ExploredTile_Visits>Visits: {0}</WTW_ExploredTile_Visits>
   <WTW_ExploredTile_LastVisited>Last visited: {0} days ago</WTW_ExploredTile_LastVisited>
+  <WTW_ExploredTile_PlayerChanged>Player changes recorded</WTW_ExploredTile_PlayerChanged>
+  <WTW_ExploredTile_MapUnloaded>Map unloaded while empty</WTW_ExploredTile_MapUnloaded>
 </LanguageData>

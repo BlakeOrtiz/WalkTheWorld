@@ -42,6 +42,7 @@
     <Compile Include="HarmonyPatches\ExitMapGrid_MapUsesExitGrid_Patch.cs" />
     <Compile Include="HarmonyPatches\FloatMenuMakerMap_GetProviderOptions_Patch.cs" />
     <Compile Include="HarmonyPatches\LordJob_DefendBase_CreateGraph_Patch.cs" />
+    <Compile Include="HarmonyPatches\Map_Tick_Hibernation_Patch.cs" />
     <Compile Include="HarmonyPatches\Pawn_JobTracker_StartJob_Patch.cs" />
     <Compile Include="HarmonyPatches\Pawn_TraderTracker_GiveSoldThingToPlayer_Patch.cs" />
     <Compile Include="HarmonyPatches\Pawn_TraderTracker_Goods_Patch.cs" />

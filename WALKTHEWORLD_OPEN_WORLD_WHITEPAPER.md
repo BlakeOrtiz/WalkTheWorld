@@ -12,7 +12,7 @@ This document is intended to survive chat loss. Another coding agent should be a
 
 Walk the World currently enables a strong fantasy: pawns can physically walk from one RimWorld map to the next, making the planet feel traversable instead of abstract. The next stage should focus on making that travel matter.
 
-The best path is a hybrid persistence model. RimWorld can preserve some full maps when the generated map is a full tile size recognized by the game and the player has materially changed it, such as by building structures. Smaller untouched exploration maps should still use stateful regeneration: record durable facts about each explored world tile, then apply those facts whenever the tile is generated again.
+The best path is a guarded hybrid persistence model. Testing showed RimWorld can preserve full maps when the generated map is a full tile size recognized by the game. Standard and Immersive modes should keep visited persistent-size exploration maps in the save, then hibernate them while empty so mining and builds do not reset without actively simulating off-screen entities. Light mode should unload empty exploration maps and rely on durable tile facts. Exploration tiles should avoid caravan-ambush incident tags, and future work should add clear limits/cleanup for saved maps.
 
 The mod should become a world-tile memory layer. It should remember visited tiles, looted ruins, consumed landmarks, cleared threats, camps, cached supplies, local reputation effects, depletion, danger, and repeated routes. It should also expose hooks and defs so other mods can add progression rewards and consequences.
 
@@ -236,8 +236,8 @@ Custom world object class for exploration tiles. It inherits from `Camp`.
 Important existing behavior:
 
 1. `IsAffectedByPlayer(Map map)` checks for colonist buildings, player haulables, stockpiles, and growing zones.
-2. `ShouldRemoveMapNow` removes the map/world object if no pawns block removal and the site has not been affected by the player.
-3. `Notify_MyMapRemoved` handles map removal and currently removes configured Odyssey tile mutators from landmark tiles.
+2. `ShouldRemoveMapNow` removes unchanged empty exploration maps and their world objects. For player-changed empty maps, Light unloads the map and keeps the world object/record, while Standard/Immersive retain persistent-size maps so mined resources and builds remain saved.
+3. `Notify_MyMapRemoved` records tile removal metadata and currently removes configured Odyssey tile mutators from landmark tiles.
 
 This is the best existing hook for durable world-tile memory. When a map is removed, summarize what happened and write it to save data.
 
@@ -268,7 +268,7 @@ Current role:
 
 Important first-pass changes already made:
 
-1. Added min/default/max map size constants: `30`, `60`, `300`.
+1. Added compact/default/persistent/max map size constants: `30`, `60`, `200`, `325`.
 2. Clamps map size, event chance, and map count in `ExposeData`.
 3. Uses the constants in UI and defaults.
 
@@ -298,12 +298,12 @@ This should be verified in game. If RimWorld type lookup is unexpectedly case-in
 
 README-listed limitations:
 
-1. Map generation can be slow. Exploration maps default to `60x60`, configurable up to `300x300`.
-2. Exploration sites are not always fully saved after leaving. Re-entering a small untouched temporary tile can regenerate it from scratch. Verified testing showed that a full-size exploration map can persist across exit and re-entry when the player has changed the map, such as by building structures.
+1. Map generation can be slow. Light-mode exploration maps are limited to `30x30` or `60x60`. Standard mode locks to `200x200`, and Immersive mode ranges from `200x200` to `325x325` in `25`-cell increments.
+2. Light-mode exploration maps unload when no pawns remain, including player-changed maps. Standard and Immersive keep visited persistent-size maps saved and hibernate them while empty, so re-entering preserves mined resources and builds without active simulation.
 
 Additional technical limits and risks:
 
-1. Full map persistence for every walked tile is not realistic as the default. It risks huge saves and degraded performance. Full-map retention should be treated as an intentional higher persistence tier for full-size, player-touched, camped, or claimed maps.
+1. Full map persistence for every walked tile is not realistic as the default. Even hibernated maps have save and memory costs. Exploration tiles no longer use caravan-ambush incident tags, but saved-map limits and cleanup tools are still needed.
 2. Travel is edge-based and depends on map/world direction mapping. Edge cases around poles, oceans, lakes, and weird world topology need testing.
 3. Settlement/quest site entry relies on vanilla/map-parent behavior and compatibility patches.
 4. Weather event transfer currently registers active conditions from one map to another. Future review should confirm this is safe, especially if condition instances should not be shared between maps.
@@ -696,15 +696,15 @@ Persistence tiers:
 
 ### Light
 
-Only records summary facts. Small or untouched maps unload normally.
+Only records summary facts. Map size is limited to `30x30` or `60x60`, below the identified persistent full-map threshold. Small or untouched maps unload normally.
 
 ### Standard
 
-Records facts plus abstract caches/camps. Maps unload normally unless vanilla keeps them because the tile is full-size and player-touched.
+Locks maps to `200x200`, the smallest full-map size identified in vanilla/DLC data. Visited maps stay saved and hibernate while empty so mined resources and builds persist without active simulation.
 
 ### Immersive
 
-Allows intentionally claimed camps or full-size player-touched maps to remain loaded or semi-persistent, with warnings about performance/save size.
+Allows full-size maps from `200x200` to `325x325` in `25`-cell increments. Intended for larger open-world play; visited maps stay saved and hibernate while empty, with future cleanup/cap tools needed to control save and memory cost.
 
 Settings should make these tiers explicit.
 
@@ -830,6 +830,9 @@ Recommended new settings:
 
 ```text
 Persistence mode: Light / Standard / Immersive
+Light map sizes: 30 or 60
+Standard map size: locked to 200
+Immersive map size range: 200-325, snapped every 25 cells
 Remember looted ruins: true/false
 Remember cleared threats: true/false
 Remember forage/scavenge depletion: true/false
@@ -915,9 +918,10 @@ It should not include copied RimWorld, Unity, or Harmony DLLs.
 ### 18.4 Map Size Tests
 
 1. Default `60x60` exploration map.
-2. Minimum `30x30`.
-3. Larger `200x200` or `300x300`.
-4. Confirm entry placement still lands near expected opposite edge.
+2. Light minimum `30x30`.
+3. Standard locked `200x200`.
+4. Immersive larger maps such as `225x225`, `250x250`, `300x300`, and `325x325`.
+5. Confirm entry placement still lands near expected opposite edge.
 
 ### 18.5 Persistence Tests After Future Implementation
 
@@ -1144,7 +1148,7 @@ Project rules:
 4. Keep package ID `addvans.WalkTheWorld` unless explicitly asked otherwise.
 5. Keep RimWorld/Unity/Harmony references `Private=False`.
 6. Keep generated `1.6/Assemblies/*.dll` and `*.pdb` out of git unless explicitly asked.
-7. Prefer compact save data by default; reserve full map persistence for full-size, player-touched, camped, or claimed tiles.
+7. Prefer compact save data by default; reserve full map persistence for a future explicit anchoring system with performance and incident safeguards.
 8. Preserve the tick fallback travel check for compatibility.
 9. Make behavior configurable before changing core player expectations.
 10. Test in a new save before testing old saves.
